@@ -1,0 +1,7 @@
+@Name('TimeWindow')
+@Description('Something')
+ SELECT *
+ FROM Location.win:time_batch(5 seconds) as in_event
+
+ // WHERE in_event.eventType = 'IN'
+ //      AND NOT EXISTS (SELECT * FROM Location.win:time_batch(2 seconds) as lastEvent WHERE lastEvent.eventType = 'OUT' );

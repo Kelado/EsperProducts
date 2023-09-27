@@ -18,14 +18,18 @@ create table AssocProductTable(
     productCategoryId int,
     relevance  double	);
 
-//-----------------------------------------------------------------------------------------
 
+@Name('TimeWindow')
+@Description('Something')
+ SELECT *
+ FROM Location as lastEvent;
+ // , Location.win:time(3 minutes) as window
+ // WHERE lastEvent.eventType = 'IN' AND NOT EXISTS (SELECT * FROM window as prevEvent WHERE prevEvent.eventType = 'OUT');
 
-//----------------------------------Checks for client possition----------------------------
 @Name('closeNtimes')
 @Description('Match when client stays at close place for 3 or more continuous ticks')
  select *  from Location match_recognize (
-                     measures A[0] as loc1 , count(A.locationID) as idcount , B as loc2
+                     measures A[0] as loc1 , count(A.clientID) as idcount , B as loc2
                      pattern (A{3,} B)
                      define
                       	A as A.lat between  (prev(A.lat, 1) -5) and (prev(A.lat, 1) +5)  and A.lon between (prev(A.lon, 1) -5)

@@ -23,14 +23,14 @@ public class tickCounterEventSubscriber  implements   StatementSubscriber{
 
         Product prod = (Product) event.get("product");
         StringBuilder sb = new StringBuilder();
-        Associate tmp = new Associate(prod.getProductID(),prod.getProductCategoryID(),tmploc.getSessionID(),tmploc.getTicks(),tmploc.getSessionID(),tmploc.getClientID());
+//        Associate tmp = new Associate(prod.getProductID(),prod.getProductCategoryID(),tmploc.getSessionID(),tmploc.getTicks(),tmploc.getSessionID(),tmploc.getClientID());
 
         sb.append("------------****------------      ");
-        sb.append("Client with sessionID:"+ tmploc.getSessionID()+" and id "+tmploc.getClientID()+" stays close to  product: "+ prod.getProductID());//tmploc.getTicks());
+//        sb.append("Client with sessionID:"+ tmploc.getSessionID()+" and id "+tmploc.getClientID()+" stays close to  product: "+ prod.getProductID());//tmploc.getTicks());
         sb.append("        ------------****------------");
 
         System.out.println(sb);
-        RabbitMQconnector.runtime.getEventService().sendEventBean(tmp, "Associate");
+//        RabbitMQconnector.runtime.getEventService().sendEventBean(tmp, "Associate");
 
         return sb.toString();
     }

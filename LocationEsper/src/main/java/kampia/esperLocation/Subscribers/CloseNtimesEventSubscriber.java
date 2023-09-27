@@ -19,9 +19,7 @@ public class CloseNtimesEventSubscriber  implements  StatementSubscriber{
         ClientCloseEvent closeEvent = new ClientCloseEvent(loc1,notimes);
 
         sb.append("------------****------------      ");
-        sb.append("Client with sessionID: "+loc1.getSessionID()+" staying close to a place "
-                    +notimes+" times ->  Lat:" + loc1.getLat()  +"  Lon: " + loc1.getLon() + " Floor:"+ loc1.getFloor() );
-        sb.append("IDs :" + loc1.getLocationID()  +" "  );
+
         sb.append("       ------------****------------");
 
         System.out.println(sb);

@@ -4,108 +4,62 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.sql.Timestamp;
 
-public class Location  extends ClientCloseEvent{
-
-    private int LocationID;
-    private int SessionID;
+public class Location{
     private int clientID;
-    private Timestamp Timestamp;
-    private Double Lat;
-    private Double Lon;
-    private int Floor;
-    private Long ticks;
+    private String latitude;
+    private String longitude;
+    private String eventType;
 
-    public Location(){}
-
-    public Location(int id , int sid, Timestamp timestamp, Double lat , Double lon , int floor , int clientID){
-        this.clientID= clientID;
-        this.LocationID=id;
-        this.SessionID=sid;
-        this.Timestamp=timestamp;
-        this.Lon=lon;
-        this.Lat=lat;
-        this.Floor=floor;
-    }
-
-
-    @Override
-    public String toString() {
-        return "VALUES ("+LocationID+","+SessionID+",'"+Timestamp.toString()+"',"+Lat+","+Lon+","+Floor+");";
-    }
-
-    public Object deserialize(String arg0, byte[] arg1) {
-        ObjectMapper mapper = new ObjectMapper();
-        Location temp = null;
-        try {
-            temp = mapper.readValue(arg1, Location.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return temp;
-        
-    }
+    private String beacon_name;
 
     public int getClientID() {
         return clientID;
     }
 
-    public void setClientID(int clientID) {
+    public void setClientID(Integer clientID) {
         this.clientID = clientID;
     }
 
-    public void setTimestamp(java.sql.Timestamp timestamp) {
-        Timestamp = timestamp;
+    public String getLatitude() {
+        return latitude;
     }
 
-    public void setSessionID(int sessionID) {
-        SessionID = sessionID;
+    public void setLatitude(String latitude) {
+        this.latitude = latitude;
     }
 
-    public void setLocationID(int locationID) {
-        LocationID = locationID;
+    public String getLongitude() {
+        return longitude;
     }
 
-    public void setLon(Double lon) {
-        Lon = lon;
+    public void setLongitude(String longitude) {
+        this.longitude = longitude;
     }
 
-    public void setLat(Double lat) {
-        Lat = lat;
+    public String getEventType() {
+        return eventType;
     }
 
-    public int getLocationID() {
-        return LocationID;
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
     }
 
-    public void setFloor(int floor) {
-        Floor = floor;
+    public String getBeacon_name() {
+        return beacon_name;
     }
 
-    public java.sql.Timestamp getTimestamp() {
-        return Timestamp;
+    public void setBeacon_name(String beacon_name) {
+        this.beacon_name = beacon_name;
     }
 
-    public int getSessionID() {
-        return SessionID;
-    }
-
-    public Double getLon() {
-        return Lon;
-    }
-
-    public Double getLat() {
-        return Lat;
-    }
-
-    public int getFloor() {
-        return Floor;
-    }
-
-    public void setTicks(Long ticks) {
-        this.ticks = ticks;
-    }
-
-    public Long getTicks() {
-        return ticks;
+    @Override
+    public String toString() {
+        return "Location{" +
+                "clientID=" + clientID +
+                ", latitude='" + latitude + '\'' +
+                ", longitude='" + longitude + '\'' +
+                ", eventType='" + eventType + '\'' +
+                ", beacon_name='" + beacon_name + '\'' +
+                '}';
     }
 }

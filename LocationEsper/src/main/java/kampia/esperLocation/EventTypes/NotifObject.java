@@ -8,12 +8,15 @@ public class NotifObject {
     private int productID;
     private int productCategoryID;
 
+    private String beacon_name;
 
 
-    public NotifObject(int clientID,int productID,int productCategoryID){
+
+    public NotifObject(int clientID,int productID,int productCategoryID, String beacon_name){
         this.clientID=clientID;
         this.productID=productID;
         this.productCategoryID=productCategoryID;
+        this.beacon_name=beacon_name;
     }
 
     public int getClientID() {

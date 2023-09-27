@@ -5,8 +5,13 @@ import kampia.esperLocation.EsperMain;
 import kampia.esperLocation.EventTypes.ClientInterested;
 import kampia.esperLocation.EventTypes.NotifObject;
 import kampia.esperLocation.RabbitMQ.RabbitMQconnector;
+import kampia.esperLocation.RabbitMQ.RabbitmqClient;
 
 public class RelProdSubscriber implements StatementSubscriber{
+    private RabbitmqClient rabbitcli;
+    public RelProdSubscriber(){
+        this.rabbitcli = new RabbitmqClient();
+    }
 
     @Override
     public String output(EventBean event){
@@ -24,8 +29,8 @@ public class RelProdSubscriber implements StatementSubscriber{
         System.out.println(sb);
         RabbitMQconnector.runtime.getEventService().sendEventBean(intre, "ClientInterested");
 
-        NotifObject not= new NotifObject((int)tmp[3],(int)tmp[0],(int)tmp[3]);
-        RabbitMQconnector.SendForNotif(not);
+        NotifObject not= new NotifObject((int)tmp[1],(int)tmp[0],(int)tmp[3],(String)tmp[4]);
+        this.rabbitcli.publish_out(not);
 
         return "";
     }

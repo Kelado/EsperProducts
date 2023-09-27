@@ -7,17 +7,21 @@ import com.espertech.esper.runtime.client.EPDeployment;
 import com.espertech.esper.runtime.client.EPRuntime;
 import com.espertech.esper.runtime.client.EPRuntimeProvider;
 import com.espertech.esper.runtime.client.EPStatement;
+import com.rabbitmq.client.Channel;
 import kampia.esperLocation.Data.CMSApiConnector;
 import kampia.esperLocation.EventTypes.ClientInterested;
 import kampia.esperLocation.EventTypes.ClientInterestedCat;
+import kampia.esperLocation.EventTypes.Location;
+import kampia.esperLocation.EventTypes.NotifObject;
 import kampia.esperLocation.RabbitMQ.RabbitMQconnector;
+import kampia.esperLocation.RabbitMQ.RabbitmqClient;
 import kampia.esperLocation.Subscribers.*;
 import kampia.esperLocation.config.EsperConfig;
 import kampia.esperLocation.utils.EPLUtil;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.*;
 
 public class EsperMain {
 
@@ -40,93 +44,82 @@ public class EsperMain {
 
         runtime = EPRuntimeProvider.getRuntime(EsperConfig.RUNTIME_URI, configuration);
 
-
         deployment = EPLUtil.deploy(runtime, compiled);
 
         listenToSampleStatement(runtime, deployment);
 
 
-        RabbitMQconnector mQconnector = new RabbitMQconnector(runtime);
-        mQconnector.run();
+        RabbitMQconnector RabbitConnector = new RabbitMQconnector(runtime);
+        RabbitConnector.run();
 
 
     }
 
 
     private void listenToSampleStatement(EPRuntime runtime, EPDeployment deployment) {
-       EPStatement statement = runtime.getDeploymentService().getStatement(deployment.getDeploymentId(), "closeNtimes");
+        RabbitmqClient rabbitcli = new RabbitmqClient();
 
+        EPStatement statement = runtime.getDeploymentService().getStatement(deployment.getDeploymentId(), "TimeWindow");
         statement.addListener((newData, oldData, sta, run) -> {
+            Map<Integer, List<Location>> events = new HashMap<>();
+            // Take all events within <window size> seconds
+            // and separate events for each client
+            for (EventBean event : newData) {
+                int clientID = (int)event.get("clientID");
 
-            for (EventBean nd : newData) {
+                Location loc = new Location();
+                loc.setClientID((int)event.get("clientID"));
+                loc.setLatitude((String)event.get("latitude"));
+                loc.setLongitude((String)event.get("longitude"));
+                loc.setEventType((String)event.get("eventType"));
+                loc.setBeacon_name((String)event.get("beacon_name"));
 
-                CloseNtimesEventSubscriber sub = new CloseNtimesEventSubscriber();
-                sub.output(nd);
-            }
-        });
-
-
-        statement = runtime.getDeploymentService().getStatement(deployment.getDeploymentId(), "associate");
-
-        statement.addListener((newData, oldData, sta, run) -> {
-            for (EventBean nd : newData) {
-                tickCounterEventSubscriber sub = new tickCounterEventSubscriber();
-                sub.output(nd);
-            }
-        });
-        statement = runtime.getDeploymentService().getStatement(deployment.getDeploymentId(), "UpdateToken");
-
-        statement.addListener((newData, oldData, sta, run) -> {
-            for (EventBean nd : newData) {
-                UpdateTokenSubscriber sub = new UpdateTokenSubscriber();
-                try {
-                    sub.output(nd);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                if (!events.containsKey(clientID)) {
+                    events.put(clientID, new ArrayList<>());
                 }
+                events.get(clientID).add(loc);
             }
-        });
 
-        statement = runtime.getDeploymentService().getStatement(deployment.getDeploymentId(), "updateRel");
+            // For each client, see if there
+            // is IN and OUT from the same beacon
+            for(Map.Entry<Integer,List<Location>> entry : events.entrySet()){
 
-        statement.addListener((newData, oldData, sta, run) -> {
-            for (EventBean nd : newData) {
-                updateRelProdSubscriber sub = new updateRelProdSubscriber();
-                try {
-                    sub.output(nd);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                // Separate events based on beacon's coordinates
+                Map<String, List<String>> beacons = new HashMap<>();
+                for(Location loc : entry.getValue()){
+//                    String key = loc.getLatitude()+"_"+loc.getLongitude();
+                    String key = loc.getBeacon_name();
+
+                    if (!beacons.containsKey(key)) {
+                        beacons.put(key, new ArrayList<>());
+                    }
+                    beacons.get(key).add(loc.getEventType());
                 }
-            }
-        });
 
-        statement = runtime.getDeploymentService().getStatement(deployment.getDeploymentId(), "passThresholdProd");
+                // If we have IN but not out of a beacon
+                // We can assume that the client is interested
+                for(Map.Entry<String,List<String>> beacon : beacons.entrySet()){
+                    if(beacon.getValue().contains("IN") || beacon.getValue().contains("STILL IN") && !beacon.getValue().contains("OUT")){
+//                        Get product locations from CMS -> ProductCategoryId, ProductID
+//                        Get client preferences from CMS
+//                        Find ProductCategoryId where client is interested
+//                        Choose one ProductId from this category
+                        ArrayList<Integer> product_ids = CMSApiConnector.fetchProductsNearBeacon(beacon.getKey());
 
-        statement.addListener((newData, oldData, sta, run) -> {
-            for (EventBean nd : newData) {
-                RelProdSubscriber sub = new RelProdSubscriber();
-                try {
-                    sub.output(nd);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                        if(Objects.isNull(product_ids) || product_ids.size()==0){
+                            System.out.println("0 items in this beacon ["+beacon.getKey()+"]");
+                            return;
+                        }
+
+//                      Do something more sophisticated, see wishlist and/or previous purchases
+                        int product_id = product_ids.get(0);
+                        System.out.println("# Client: "+entry.getKey()+ " is interested for "+product_id);
+                        rabbitcli.publish_out(new NotifObject(entry.getKey(),product_id,-1,""));
+                    }
                 }
+                System.out.println("Nothing found in this time window!");
+                System.out.println(beacons.entrySet());
             }
         });
-
-        statement = runtime.getDeploymentService().getStatement(deployment.getDeploymentId(), "passThresholdCat");
-
-        statement.addListener((newData, oldData, sta, run) -> {
-            for (EventBean nd : newData) {
-                RelCatSubscriber sub = new RelCatSubscriber();
-                try {
-                    sub.output(nd);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-
-
     }
 }

@@ -30,20 +30,6 @@ public class CMSApiConnector {
 
     public static void  InitCMSApiConnector() throws IOException, SQLException, ClassNotFoundException {
 
-        if (!Configurations.Local){
-            fetchToken();
-            fetchProducts();
-            fetchClients();
-            fetchCampaigns();
-            fetchWishlists();
-            fetchImpWishlist();
-        }else {
-            fetchProductsLocal();
-            fetchClientsLocal();
-            fetchCampaignsLocal();
-            fetchWishlistsLocal();
-            fetchImpWishlistLocal();
-        }
 
     }
 
@@ -406,4 +392,53 @@ public class CMSApiConnector {
 
     public static ArrayList<Product> getProducts(){return Products;}
 
+    public static ArrayList<Integer> fetchProductsNearBeacon(String name) {
+        fetchToken();
+
+        Request request = new Request.Builder()
+                .url("https://cms.proximiot.com/api/v1/beacons?PageIndex=1&PageSize=50&useFilterUnion=false")
+                .addHeader("Accept", "text/plain")
+                .addHeader("Accept-Encoding", "gzip, deflate, br")
+                .addHeader("Connection", "keep-alive")
+                .addHeader("Authorization", "Bearer " + APIToken)
+                .get()
+                .build();
+
+
+        try (Response response = httpClient.newCall(request).execute()) {
+
+            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+
+            String jsonBodyres= Objects.requireNonNull(response.body()).string();
+            JSONObject object= new JSONObject(jsonBodyres);
+
+            JSONArray beacons = object.getJSONArray("items");
+            JSONArray products= null;
+            for (int i = 0; i < beacons.length(); i++) {
+                JSONObject beacon = beacons.getJSONObject(i);
+                String b_name = beacon.getString("Name");
+
+                if(name.equals(b_name)) {
+                    products = beacon.getJSONArray("Products");
+                    break;
+                }
+            }
+
+            if(Objects.isNull(products)){
+                return null;
+            }
+
+            ArrayList<Integer> product_ids = new ArrayList<>();
+            for (int i = 0; i < products.length(); i++) {
+                Integer itemName = products.getJSONObject(i).getInt("Id");
+                product_ids.add(itemName);
+            }
+
+            return product_ids;
+
+        } catch (JSONException | IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }

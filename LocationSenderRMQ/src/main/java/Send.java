@@ -25,12 +25,18 @@ public class Send {
     public static HashMap<Integer,Integer> clientIds= new HashMap<>();
 
     private final static String QUEUE_NAME = "input";
+    private final static String RABBIT_USER = "user";
+    private final static String RABBIT_PASS = "password";
     public static final String USER = "root";
-    public static final String PASS = "";
+    public static final String PASS = "1212";
 
     public static void main(String[] argv) throws Exception {
         ConnectionFactory factory = new ConnectionFactory();
+        factory.setUsername(RABBIT_USER);
+        factory.setPassword(RABBIT_PASS);
+        factory.setVirtualHost("/");
         factory.setHost("localhost");
+        factory.setPort(5672);
 
         clientIds.put(8,5);
         clientIds.put(9,7);
@@ -38,9 +44,9 @@ public class Send {
         clientIds.put(11,9);
 
         try (Connection connection = factory.newConnection();
-             Channel channel = connection.createChannel()) {
-            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+            Channel channel = connection.createChannel()) {
 
+            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
 
             java.sql.Connection conn = null;
             Statement stmt = null;
@@ -48,8 +54,7 @@ public class Send {
                 Class.forName("org.mariadb.jdbc.Driver");
 
                 System.out.println("Connecting to a selected database...");
-                conn = DriverManager.getConnection(
-                        DB_URL, USER, PASS);
+                conn = DriverManager.getConnection(DB_URL, USER, PASS);
                 System.out.println("Connected database successfully...");
                 stmt = conn.createStatement();
 
